@@ -1,0 +1,4 @@
+---begin output---
+waldorf final balance (raw): 444.55
+- waldorf final balance (rounded down, integer): 444
+---end output---
