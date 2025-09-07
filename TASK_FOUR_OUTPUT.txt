@@ -1,0 +1,4 @@
+---begin output---
+wilbur final balance (raw): 3476.21
+- wilbur final balance (rounded down, integer): 3476
+---end output---
