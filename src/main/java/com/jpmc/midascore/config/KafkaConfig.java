@@ -2,61 +2,64 @@ package com.jpmc.midascore.config;
 
 import com.jpmc.midascore.foundation.Transaction;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
-import org.springframework.beans.factory.annotation.Value;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
-import org.springframework.kafka.core.ConsumerFactory;
-import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
+import org.springframework.kafka.core.*;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
+import org.springframework.kafka.support.serializer.JsonSerializer;
 
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Kafka consumer configuration that builds a ConsumerFactory for Transaction objects.
- * It prefers embedded Kafka broker addresses (spring.embedded.kafka.brokers) if present
- * (the tests will provide embedded broker addresses), otherwise falls back to standard
- * spring.kafka.bootstrap-servers if configured.
- */
-@EnableKafka
 @Configuration
-public class KafkaConsumerConfig {
+public class KafkaConfig {
 
-    @Value("${spring.embedded.kafka.brokers:}")
-    private String embeddedBrokers;
-
-    @Value("${spring.kafka.bootstrap-servers:}")
-    private String bootstrapServers;
+    // Producer
+    @Bean
+    public ProducerFactory<String, Transaction> producerFactory() {
+        Map<String, Object> props = new HashMap<>();
+        // Let tests (embedded Kafka) supply bootstrap servers via spring.embedded.kafka.brokers
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, System.getProperty("spring.embedded.kafka.brokers", ""));
+        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+        // optional: don't include type headers
+        props.put(JsonSerializer.ADD_TYPE_INFO_HEADERS, false);
+        return new DefaultKafkaProducerFactory<>(props);
+    }
 
     @Bean
-    public ConsumerFactory<String, Transaction> transactionConsumerFactory() {
+    public KafkaTemplate<String, Transaction> kafkaTemplate() {
+        return new KafkaTemplate<>(producerFactory());
+    }
+
+    // Consumer
+    @Bean
+    public ConsumerFactory<String, Transaction> consumerFactory() {
         JsonDeserializer<Transaction> deserializer = new JsonDeserializer<>(Transaction.class);
-        deserializer.addTrustedPackages("*"); // allow deserialization for the test Transaction class
+        deserializer.addTrustedPackages("*");
+        deserializer.setRemoveTypeHeaders(false);
+        deserializer.setUseTypeMapperForKey(false);
 
         Map<String, Object> props = new HashMap<>();
-
-        // Prefer embedded brokers provided by the test harness
-        String brokers = (embeddedBrokers != null && !embeddedBrokers.isBlank()) ? embeddedBrokers : bootstrapServers;
-        if (brokers != null && !brokers.isBlank()) {
-            props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, brokers);
-        }
-
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, "midas-core-group");
-        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, System.getProperty("spring.embedded.kafka.brokers", ""));
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
+        // value deserializer is provided as instance below, but you can also set the class name:
+        // props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
+        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, "forage-midas-group");
 
         return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(), deserializer);
     }
 
     @Bean
     public ConcurrentKafkaListenerContainerFactory<String, Transaction> kafkaListenerContainerFactory() {
-        ConcurrentKafkaListenerContainerFactory<String, Transaction> factory =
-                new ConcurrentKafkaListenerContainerFactory<>();
-        factory.setConsumerFactory(transactionConsumerFactory());
-        return factory;
+        ConcurrentKafkaListenerContainerFactory<String, Transaction> f = new ConcurrentKafkaListenerContainerFactory<>();
+        f.setConsumerFactory(consumerFactory());
+        return f;
     }
 }
+

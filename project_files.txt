@@ -1,4 +1,8 @@
 README.md
+TASK_FOUR_OUTPUT.txt
+TASK_ONE_OUTPUT.txt
+TASK_THREE_OUTPUT.txt
+TASK_TWO_OUTPUT.txt
 application.yml
 midas-core.iml
 mvnw
@@ -32,21 +36,31 @@ midascore
 ./src/main/java/com/jpmc/midascore:
 MidasCoreApplication.java
 component
+config
 entity
 foundation
 repository
 
 ./src/main/java/com/jpmc/midascore/component:
 DatabaseConduit.java
+DebugUtils.java
+TransactionListener.java
+TransactionProcessor.java
+
+./src/main/java/com/jpmc/midascore/config:
+KafkaConfig.java
 
 ./src/main/java/com/jpmc/midascore/entity:
+TransactionRecord.java
 UserRecord.java
 
 ./src/main/java/com/jpmc/midascore/foundation:
 Balance.java
+Incentive.java
 Transaction.java
 
 ./src/main/java/com/jpmc/midascore/repository:
+TransactionRepository.java
 UserRepository.java
 
 ./src/test:
@@ -89,6 +103,7 @@ classes
 generated-sources
 generated-test-sources
 maven-status
+surefire
 surefire-reports
 test-classes
 
@@ -104,21 +119,31 @@ midascore
 ./target/classes/com/jpmc/midascore:
 MidasCoreApplication.class
 component
+config
 entity
 foundation
 repository
 
 ./target/classes/com/jpmc/midascore/component:
 DatabaseConduit.class
+DebugUtils.class
+TransactionListener.class
+TransactionProcessor.class
+
+./target/classes/com/jpmc/midascore/config:
+KafkaConfig.class
 
 ./target/classes/com/jpmc/midascore/entity:
+TransactionRecord.class
 UserRecord.class
 
 ./target/classes/com/jpmc/midascore/foundation:
 Balance.class
+Incentive.class
 Transaction.class
 
 ./target/classes/com/jpmc/midascore/repository:
+TransactionRepository.class
 UserRepository.class
 
 ./target/generated-sources:
@@ -152,9 +177,17 @@ default-testCompile
 createdFiles.lst
 inputFiles.lst
 
+./target/surefire:
+
 ./target/surefire-reports:
+2025-09-04T20-55-01_991-jvmRun1.dump
+2025-09-04T20-55-01_991-jvmRun1.dumpstream
+2025-09-06T15-44-03_665-jvmRun1.dump
+2025-09-06T15-44-03_665-jvmRun1.dumpstream
 TEST-com.jpmc.midascore.TaskOneTests.xml
+TEST-com.jpmc.midascore.TaskTwoTests.xml
 com.jpmc.midascore.TaskOneTests.txt
+com.jpmc.midascore.TaskTwoTests.txt
 
 ./target/test-classes:
 application.properties
